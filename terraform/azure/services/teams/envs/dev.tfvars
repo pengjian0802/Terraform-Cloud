@@ -1,6 +1,6 @@
 # Azure DevOps组织配置
 azdo_org_name = "gta-org"
-azdo_pat_token = "1ANMDoJVu6RmsMw1Anf1TyZq4J8ooXa07pTfTJb7BwPZfYrrPbGAJQQJ99CBACAAAAADDr1GAAASAZDO19lc"
+azdo_pat_token = "XXXXXXXXXXXX"
 
 # 多团队配置（用户邮箱版）
 teams = {
