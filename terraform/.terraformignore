@@ -1,0 +1,29 @@
+# 核心必忽略
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.backup
+terraform.tfvars
+*.auto.tfvars
+.env
+.env.*
+
+# 保留锁文件（团队协作）
+# .terraform.lock.hcl
+
+# 临时/编辑器文件
+*.swp
+*.swo
+.DS_Store
+.vscode/
+.idea/
+
+# 日志/临时文件
+*.log
+tmp/
+temp/
+
+# Terraform Cloud 配置
+.terraform-cloud/
+terraform-cloud.tfvars

@@ -1,0 +1,28 @@
+# ========== Terraform 核心忽略 ==========
+# 插件缓存目录（必加）
+.terraform/
+# 状态文件（敏感，必加）
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.backup
+# 锁文件（团队协作可注释掉，单人开发必加）
+.terraform.lock.hcl
+# 变量文件（含敏感信息，必加）
+*.auto.tfvars
+# 计划文件
+*.tfplan
+
+# ========== 其他通用忽略 ==========
+# 日志/临时文件
+*.log
+tmp/
+temp/
+# 编辑器配置
+.vscode/
+.idea/
+*.swp
+*.swo
+# macOS 隐藏文件
+.DS_Store
+terraform/terraform.tfstate

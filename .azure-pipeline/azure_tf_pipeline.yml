@@ -1,0 +1,81 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+# 指定代理池（Ubuntu 是 Terraform 推荐的环境）
+pool:
+  vmImage: 'ubuntu-latest'
+
+trigger: none # 不自动触发，手动运行
+
+parameters:
+  - name: env
+    displayName: 'Environment'
+    type: string
+    default: 'dev'
+    values: ['dev', 'test', 'prod']
+  - name: service
+    displayName: 'Service Name'
+    type: string
+    values: ['azdo-team', 'cp4i']
+
+# 定义变量
+variables:
+  env: ${{ parameters.env }}
+  service: ${{ parameters.service }}
+  AZURE_SERVICE_CONNECTION: 'Azure-Resource-Manager-SC'
+  TF_VERSION: '1.6.6'
+  TF_WORKING_DIR: '$(System.DefaultWorkingDirectory)/terraform/azure/$(service)' # Terraform工作目录
+
+
+# 流水线阶段：分验证、计划、部署（部署阶段手动确认）
+stages:
+  # 阶段1：验证Terraform代码
+  - stage: Terraform_Execute
+    displayName: 'Terraform Execute'
+    jobs:
+      - job: Execute
+        displayName: 'Terraform Execute Job'
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Azure CLI Login'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: 'echo "Already login to azure subscription"'
+
+          # 安装指定版本的Terraform
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform $(TF_VERSION)'
+            inputs:
+              terraformVersion: '$(TF_VERSION)' 
+
+          - script: |
+              chmod +x $(System.DefaultWorkingDirectory)/scripts/terraform-plan.sh
+              chmod +x $(System.DefaultWorkingDirectory)/scripts/terraform-apply.sh
+              chmod +x $(System.DefaultWorkingDirectory)/scripts/terraform-destroy.sh
+            displayName: 'Add execute permissions to scripts'
+
+          - script: |
+              $(System.DefaultWorkingDirectory)/scripts/terraform-plan.sh $(env) $(service)
+            displayName: 'Run Terraform Plan'
+          
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan'
+            inputs:
+              targetPath: '$(TF_WORKING_DIR)/$(service).tfplan'
+              artifact: '$(service).tfplan'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform tfstate'
+            inputs:
+              PathtoPublish: '$(TF_WORKING_DIR)/terraform.tfstate'
+              ArtifactName: 'terraform.tfstate'
+              publishLocation: 'pipeline'
+
+          - script: |
+              $(System.DefaultWorkingDirectory)/scripts/terraform-apply.sh $(env) $(service)
+            displayName: 'Run Terraform Apply'

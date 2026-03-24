@@ -1,0 +1,159 @@
+name: '$(Build.DefinitionName)-$(Date:yyyyMMdd)-$(Rev:.r)'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+trigger: none
+
+variables:
+  nodeVersion: '20.x'
+  buildOutputDir: 'dist'
+  artifactName: 'react-app'
+
+stages:
+  - stage: 'Build'
+    displayName: 'Build React App'
+    jobs:
+      - job: 'Build'
+        displayName: 'Build Job'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Install Node.js $(nodeVersion)'
+
+          - task: Cache@2
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              Path: '/home/vsts/.npm'
+              displayName: 'Cache npm dependencies'
+              continueOnError: true
+          
+          - script: |
+              npm install
+            displayName: 'Install npm dependencies'
+
+          - script: |
+              npm run lint
+            displayName: 'Run ESLint checks'
+            continueOnError: false
+
+          # - script: |
+          #     npm run test
+          #   displayName: 'Run tests'
+          #   continueOnError: false
+
+          - script: |
+              npm run build
+            displayName: 'Build the React app'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish build artifacts'
+            inputs:
+              PathtoPublish: '$(buildOutputDir)'
+              ArtifactName: '$(artifactName)'
+              publishLocation: 'Container'
+  
+  - stage: 'Deploy_Dev'
+    displayName: 'Deploy to Dev Environment'
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/develop')
+    dependsOn: 'Build'
+    jobs:
+      - deployment: 'Deploy'
+        displayName: 'Deploy to Dev Environment'
+        environment: 'Dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  inputs:
+                    artifactName: '$(artifactName)'
+                    downloadPath: '$(System.DefaultWorkingDirectory)'
+                  displayName: 'Download build artifacts'
+
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: 'Azure-Resource-Manager-SC'
+                    appName: 'react-demo'
+                    appType: 'webAppLinux'
+                    package: '$(System.DefaultWorkingDirectory)/$(artifactName)'
+                    resourceGroupName: 'gta-devops-rg'
+                    startupCommand: 'npx serve -s /home/site/wwwroot -l 8080'
+                  displayName: 'Deploy to Azure Web App Dev'
+
+  - stage: 'Deploy_Prod_Green_To_Staging'
+    displayName: 'Deploy to Prod Green Environment'
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    dependsOn: 'Build'
+    jobs:
+      - deployment: 'Deploy'
+        displayName: 'Deploy to Prod Green Environment'
+        environment: 'Prod'
+        strategy:
+          runOnce:
+            preDeploy:
+              steps:
+                - script: |
+                    echo 'Waiting for approval to deploy to Prod ...'
+                  displayName: 'Pre-deployment steps'
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  inputs:
+                    artifactName: '$(artifactName)'
+                    downloadPath: '$(System.DefaultWorkingDirectory)'
+                  displayName: 'Download build artifacts'
+
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: 'Azure-Resource-Manager-SC'
+                    appName: 'as-react-deploy'
+                    appType: 'webAppLinux'
+                    slotName: 'staging-slot'
+                    package: '$(System.DefaultWorkingDirectory)/$(artifactName)'
+                    resourceGroupName: 'app-service-rg'
+                    startupCommand: 'npx serve -s /home/site/wwwroot -l 8080'
+                  displayName: 'Deploy to Azure Web App Prod Green'
+
+                - script: |
+                    curl -sS https://as-react-deploy-staging-slot.azurewebsites.net/health
+                  displayName: 'Smoke Test on Staging Slot'
+
+  - stage: 'Swap_Slot_To_Prod'
+    displayName: 'Swap Staging Slot to Prod'
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    dependsOn: 'Deploy_Prod_Green_To_Staging'
+    jobs:
+      - deployment: 'Deploy'
+        displayName: 'Deploy Prod Green to Prod Environment'
+        environment: 'Prod'
+        strategy:
+          runOnce:
+            preDeploy:
+              steps:
+                - script: |
+                    echo 'Waiting for approval to deploy to Prod ...'
+                  displayName: 'Pre-deployment steps'
+            deploy:
+              steps:
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: 'Azure-Resource-Manager-SC'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az webapp deployment slot swap \
+                        --name as-react-deploy \
+                        --slot staging-slot \
+                        --resource-group app-service-rg
+                  displayName: 'Swap Staging Slot to Prod'
+
+                - script: |
+                    curl -sS https://as-react-deploy.azurewebsites.net/health
+                  displayName: 'Smoke Test on Staging Slot'
+
+                
+
