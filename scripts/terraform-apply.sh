@@ -18,6 +18,6 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BASE_DIR=$(dirname "$SCRIPT_DIR")
 echo "Base directory: $BASE_DIR"
 
-cd "$BASE_DIR/terraform/$service"
+cd "$BASE_DIR/terraform/azure/services/$service"
 
 terraform apply $service.tfplan

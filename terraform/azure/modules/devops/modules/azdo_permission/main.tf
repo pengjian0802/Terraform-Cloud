@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    azuredevops = {
+      source  = "microsoft/azuredevops"
+      version = "1.15.0"
+    }
+  }
+}
+
 resource "azuredevops_user_entitlement" "project_admins" {
   for_each       = toset(var.project_administrator_users)
   principal_name = each.value

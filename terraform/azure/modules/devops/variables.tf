@@ -11,13 +11,26 @@ variable "azdo_pat_token" {
   sensitive   = true # 敏感变量，不显示在输出/日志中
 }
 
-# 多团队核心配置
-variable "teams" {
-  type = map(object({
+# # 多团队核心配置
+# variable "teams" {
+#   type = map(object({
+#     project_administrators = list(string)
+#     contributors           = list(string)
+#   }))
+#   description = "Multi-Team Configuration: key=ProjectName, value=Group-UserEmailMap"
+# }
+
+variable "project_name" {
+  type        = string
+  description = "Project Name"
+}
+
+variable "team" {
+  type = object({
     project_administrators = list(string)
     contributors           = list(string)
-  }))
-  description = "Multi-Team Configuration: key=ProjectName, value=Group-UserEmailMap"
+  })
+  description = "Team members Configuration"
 }
 
 variable "env_names" {
@@ -32,8 +45,32 @@ variable "reviewer_count" {
   default     = 1
 }
 
-variable "ci_build_id" {
-  type        = number
-  description = "CI Pipeline ID (for branch build validation)"
-  default     = 1
+variable "azure_rm_sc_name" {
+  type        = string
+  description = "Azure Resource Manager service connection name"
+}
+
+variable "sp_client_id" {
+  type        = string
+  description = "Azure Service Principal Client/Application ID"
+}
+
+variable "sp_key" {
+  type        = string
+  description = "Azure Service Principal Key"
+ }
+
+variable "sp_tenant_id" {
+  type        = string
+  description = "Azure Service Principal Tenant ID"
+}
+
+variable "subscription_id" {
+  type        = string
+  description = "Azure Subscription ID"
+}
+
+variable "subscription_name" {
+  type        = string
+  description = "Azure Subscription Name"
 }

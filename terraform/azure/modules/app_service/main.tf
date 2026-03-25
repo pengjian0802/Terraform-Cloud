@@ -9,10 +9,6 @@ terraform {
   }
 }
 
-provider "azurerm" {
-  features {}
-}
-
 resource "azurerm_resource_group" "app_service_rg" {
   name     = var.app_service_rg_name
   location = var.app_service_region

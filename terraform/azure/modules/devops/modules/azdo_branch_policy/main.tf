@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    azuredevops = {
+      source  = "microsoft/azuredevops"
+      version = "1.15.0"
+    }
+  }
+}
+
 resource "azuredevops_branch_policy_merge_types" "branch_merge_policy" {
   project_id = var.project_id
   enabled    = true

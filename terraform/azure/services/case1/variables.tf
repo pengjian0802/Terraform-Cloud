@@ -10,6 +10,11 @@ variable "azdo_pat_token" {
   sensitive   = true # 敏感变量，不显示在输出/日志中
 }
 
+variable "sp_name" {
+  type        = string
+  description = "Azure Service Principal Name"
+}
+
 # 多团队核心配置
 variable "teams" {
   type = map(object({
@@ -24,13 +29,20 @@ variable "env_names" {
   description = "Environment Names"
   default     = ["SandBox", "Dev", "UAT", "Prod"]
 }
+
 variable "reviewer_count" {
   type        = number
   description = "Minimum Number of Reviewers for Pull Requests"
   default     = 1
 }
+
 variable "ci_build_id" {
   type        = number
   description = "CI Pipeline ID (for branch build validation)"
   default     = 1
+}
+
+variable "azure_rm_sc_name" {
+  type        = string
+  description = "Azure Resource Manager service connection name"
 }

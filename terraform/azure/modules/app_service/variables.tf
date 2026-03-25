@@ -1,0 +1,44 @@
+variable "app_service_rg_name" {
+  type        = string
+  description = "Azure App Service Resource Group Name"
+}
+
+variable "app_service_region" {
+  type        = string
+  description = "Azure App Service Region"
+}
+
+variable "app_service_sku_name" {
+  type        = string
+  description = "Azure App Service SKU Name"
+  default     = "FC1"
+}
+
+variable "app_service_name" {
+  type        = string
+  description = "Azure App Service Name"
+}
+
+variable "application_stack" {
+  type = object({
+    type                = string           # python/nodejs/dotnet/java
+    version             = string           # 3.11/18-lts/7.0/17
+    java_server         = optional(string) # Java:（TOMCAT/JETTY）
+    java_server_version = optional(string) # Java: Container Version
+  })
+  default = {
+    type    = "python"
+    version = "3.11"
+  }
+  description = "App Service application stack configuration"
+}
+
+variable "app_service_tags" {
+  type        = map(string)
+  description = "Tags to apply to the App Service resources"
+  default = {
+    Environment = "dev"
+    ManagedBy   = "Terraform"
+    Service     = "AppService"
+  }
+}

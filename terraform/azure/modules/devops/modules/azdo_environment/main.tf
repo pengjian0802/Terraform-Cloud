@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    azuredevops = {
+      source  = "microsoft/azuredevops"
+      version = "1.15.0"
+    }
+  }
+}
+
 # 批量创建Dev/UAT/Prod环境
 resource "azuredevops_environment" "this" {
   for_each    = toset(var.env_names)
