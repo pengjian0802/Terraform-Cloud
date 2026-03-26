@@ -1,9 +1,19 @@
 variable "resource_group_name" {
-  description = "The name of the resource group where the resources will be deployed."
+  description = "Azure Resource Group Name"
   type        = string
 }
 
-variable "resource_group_location" {
-  description = "The location of the resource group where the resources will be deployed."
+variable "key_vault_name" {
+  description = "Key Vault Name"
   type        = string
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Tags"
+  default     = {
+    Environment = "dev"
+    ManagedBy   = "Terraform"
+    Service     = "GTA"
+  }
 }

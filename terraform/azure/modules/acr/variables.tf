@@ -4,9 +4,9 @@ variable "resource_group_name" {
   default     = "gta-devops-rg"
 }
 
-variable "sp_object_id" {
+variable "sp_client_id" {
   type        = string
-  description = "Azure Service Principal Object ID"
+  description = "Azure Service Principal Client ID"
 }
 
 variable "acr_name_prefix" {
@@ -19,3 +19,13 @@ variable "acr_sku" {
   description = "Azure Container Registry SKU"
   default     = "Basic" # 基本SKU，免费; Premium 高级SKU，需要订阅
 }
+
+variable "tags" {
+  type        = map
+  description = "Azure Resource Tags"
+  default     = {
+    Environment = "dev"
+    ManagedBy   = "Terraform"
+    Service     = "ARO"
+  }
+ }

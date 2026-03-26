@@ -1,10 +1,23 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
 # Get current tenant ID
 data "azurerm_client_config" "current" {}
 
+data "azurerm_resource_group" "resource_group" {
+  name = var.resource_group_name
+}
+
 resource "azurerm_key_vault" "key_vault" {
-  name                        = "${var.resource_group_name}-key-vault"
-  location                    = var.resource_group_location
-  resource_group_name         = var.resource_group_name
+  name                        = var.key_vault_name
+  location                    = data.azurerm_resource_group.resource_group.location
+  resource_group_name         = data.azurerm_resource_group.resource_group.name
   enabled_for_disk_encryption = true
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   soft_delete_retention_days  = 90
@@ -18,6 +31,8 @@ resource "azurerm_key_vault" "key_vault" {
     key_permissions    = ["Create", "Get", "List"]
     secret_permissions = ["Set", "Get", "List", "Delete", "Purge", "Recover"]
   }
+
+  tags = var.tags
 }
 
 resource "tls_private_key" "rsa_key" {
@@ -34,7 +49,7 @@ locals {
 
 # 
 resource "azurerm_key_vault_secret" "ssh_public_key" {
-  name         = "${var.resource_group_name}-ssh-public-key"
+  name         = "${var.key_vault_name}-ssh-public-key"
   value        = local.ssh_public_key_openssh
   key_vault_id = azurerm_key_vault.key_vault.id
 
@@ -45,7 +60,7 @@ resource "azurerm_key_vault_secret" "ssh_public_key" {
 
 # 存储 SSH 私钥到 Key Vault（备份，敏感信息）
 resource "azurerm_key_vault_secret" "ssh_private_key" {
-  name         = "${var.resource_group_name}-ssh-private-key"
+  name         = "${var.key_vault_name}-ssh-private-key"
   value        = local.ssh_private_key_pem
   key_vault_id = azurerm_key_vault.key_vault.id
 
@@ -59,6 +74,11 @@ output "key_vault_id" {
   value       = azurerm_key_vault.key_vault.id
 }
 
+output "key_vault_name" {
+  description = "The name of the Key Vault."
+  value       = azurerm_key_vault.key_vault.name
+}
+
 output "ssh_public_key_name" {
   description = "The name of the SSH public key secret stored in the Key Vault."
   value       = azurerm_key_vault_secret.ssh_public_key.name
@@ -67,6 +87,7 @@ output "ssh_public_key_name" {
 output "ssh_public_key" {
   description = "The SSH public key stored in the Key Vault."
   value       = azurerm_key_vault_secret.ssh_public_key.value
+  sensitive   = true
 }
 
 output "ssh_private_key_name" {

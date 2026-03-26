@@ -1,18 +1,12 @@
-variable "sp_object_id" {
+variable "sp_client_id" {
   type        = string
-  description = "Azure Service Principal Object ID"
+  description = "Azure Service Principal Client ID"
 }
 
 variable "resource_group_name" {
   type        = string
   description = "ARO Resource Group Name"
   default     = "aro-dev-rg"
-}
-
-variable "location" {
-  type        = string
-  description = "ARO Cluster Location"
-  default     = "eastasia"
 }
 
 variable "cluster_name" {

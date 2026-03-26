@@ -13,12 +13,8 @@ terraform {
   }
 }
 
-provider "azurerm" {
-  features {}
-}
-
 data "azuread_service_principal" "gta_sp" {
-  object_id = var.sp_object_id
+  client_id = var.sp_client_id
 }
 
 resource "azuread_service_principal_password" "service_principal_password" {
@@ -42,15 +38,12 @@ resource "azurerm_role_assignment" "role_network2" {
   principal_id         = data.azuread_service_principal.redhat_openshift.object_id
 }
 
-# Create the resource group for ARO cluster
-resource "azurerm_resource_group" "resource_group" {
-  name     = var.resource_group_name
-  location = var.location
-  tags     = var.tags
+data "azurerm_resource_group" "resource_group" {
+  name = var.resource_group_name
 }
 
 resource "azurerm_role_assignment" "role_resource_group" {
-  scope                = azurerm_resource_group.resource_group.id
+  scope                = data.azurerm_resource_group.resource_group.id
   role_definition_name = "Contributor"
   principal_id         = data.azuread_service_principal.gta_sp.object_id
 }
@@ -59,17 +52,15 @@ resource "azurerm_role_assignment" "role_resource_group" {
 resource "azurerm_virtual_network" "virtual_network" {
   name                = "${var.cluster_name}-vnet"
   address_space       = var.vnet_address_space
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = data.azurerm_resource_group.resource_group.location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
   tags                = var.tags
-
-  depends_on = [azurerm_resource_group.resource_group]
 }
 
 # Create the subnet for ARO master nodes
 resource "azurerm_subnet" "main_subnet" {
   name                 = "${var.cluster_name}-main-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
+  resource_group_name  = data.azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.virtual_network.name
   address_prefixes     = var.main_subnet_prefixes
   service_endpoints    = ["Microsoft.Storage", "Microsoft.ContainerRegistry"]
@@ -80,7 +71,7 @@ resource "azurerm_subnet" "main_subnet" {
 # Create the subnet for ARO worker nodes
 resource "azurerm_subnet" "worker_subnet" {
   name                 = "${var.cluster_name}-worker-subnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
+  resource_group_name  = data.azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.virtual_network.name
   address_prefixes     = var.worker_subnet_prefixes
   service_endpoints    = ["Microsoft.Storage", "Microsoft.ContainerRegistry"]
@@ -91,8 +82,8 @@ resource "azurerm_subnet" "worker_subnet" {
 # 4. 创建 ARO 集群（核心资源）
 resource "azurerm_redhat_openshift_cluster" "aro_cluster" {
   name                = var.cluster_name
-  location            = azurerm_resource_group.resource_group.location
-  resource_group_name = azurerm_resource_group.resource_group.name
+  location            = data.azurerm_resource_group.resource_group.location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
 
   cluster_profile {
     domain  = var.cluster_domain
@@ -135,14 +126,29 @@ resource "azurerm_redhat_openshift_cluster" "aro_cluster" {
   tags = var.tags
 }
 
-output "output_summary" {
-  description = "ARO cluster summary"
-  value = {
-    resource_group_name    = azurerm_resource_group.resource_group.name
-    cluster_name           = azurerm_redhat_openshift_cluster.aro_cluster.name
-    cluster_console_url    = azurerm_redhat_openshift_cluster.aro_cluster.console_url
-    cluster_api_server_url = azurerm_redhat_openshift_cluster.aro_cluster.api_server_profile[0].url
-  }
+output "cluster_name" {
+  value = azurerm_redhat_openshift_cluster.aro_cluster.name
+  description = "ARO cluster name"
+}
+
+output "cluster_console_url" {
+  value = azurerm_redhat_openshift_cluster.aro_cluster.console_url
+  description = "ARO cluster console URL"
+}
+
+output "cluster_api_server_url" {
+  value = azurerm_redhat_openshift_cluster.aro_cluster.api_server_profile[0].url
+  description = "ARO cluster API server URL"
+}
+
+output "cluster_username" {
+  value = "kubeadmin"
+  description = "ARO cluster username"
+}
+
+output "cluster_password" {
+  value = "az aro list-credentials --name <cluster_name> --resource-group <resource_group_name>"
+  description = "ARO cluster password"
 }
 
 # Outputs for kubeadmin username and password

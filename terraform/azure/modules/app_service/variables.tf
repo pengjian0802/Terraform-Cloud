@@ -1,6 +1,6 @@
-variable "app_service_rg_name" {
+variable "resource_group_name" {
   type        = string
-  description = "Azure App Service Resource Group Name"
+  description = "Resource Group Name"
 }
 
 variable "app_service_region" {
@@ -11,7 +11,7 @@ variable "app_service_region" {
 variable "app_service_sku_name" {
   type        = string
   description = "Azure App Service SKU Name"
-  default     = "FC1"
+  default     = "F1"
 }
 
 variable "app_service_name" {

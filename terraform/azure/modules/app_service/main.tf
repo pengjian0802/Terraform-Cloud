@@ -9,24 +9,22 @@ terraform {
   }
 }
 
-resource "azurerm_resource_group" "app_service_rg" {
-  name     = var.app_service_rg_name
-  location = var.app_service_region
-  tags     = var.app_service_tags
+data "azurerm_resource_group" "resource_group" {
+  name = var.resource_group_name
 }
 
 resource "azurerm_service_plan" "app_service_plan" {
   name                = "${var.app_service_name}-plan"
   location            = var.app_service_region
-  resource_group_name = azurerm_resource_group.app_service_rg.name
+  resource_group_name = data.azurerm_resource_group.resource_group.name
   os_type             = "Linux"
   sku_name            = var.app_service_sku_name
 }
 
 resource "azurerm_linux_web_app" "linux_web_app" {
   name                = var.app_service_name
-  resource_group_name = azurerm_resource_group.app_service_rg.name
-  location            = azurerm_service_plan.app_service_plan.location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
+  location            = var.app_service_region
   service_plan_id     = azurerm_service_plan.app_service_plan.id
 
   site_config {
@@ -112,3 +110,24 @@ resource "azurerm_linux_web_app_slot" "linux_web_app_slot" {
     health_check_path = "/health"
   }
 }
+
+output "app_service_name" {
+  value       = azurerm_linux_web_app.linux_web_app.name
+  description = "Azure App Service Name"
+}
+
+output "app_service_hostname" {
+  value       = azurerm_linux_web_app.linux_web_app.default_hostname
+  description = "Azure App Service URL"
+}
+
+output "app_service_slot_name" {
+  value       = azurerm_linux_web_app_slot.linux_web_app_slot.name
+  description = "Azure App Service Slot Name"
+}
+
+output "app_service_slot_hostname" {
+  value       = azurerm_linux_web_app_slot.linux_web_app_slot.default_hostname
+  description = "Azure App Service Slot Hostname"
+}
+

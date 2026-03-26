@@ -1,29 +1,59 @@
+terraform {
+
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 3.0"
+    }
+  }
+}
+
+data "azuread_client_config" "current" {}
+
+data "azurerm_resource_group" "resource_group" {
+  name = var.resource_group_name
+}
+
+data "azuread_service_principal" "gta_sp" {
+  client_id = var.sp_client_id
+}
+
+resource "azuread_service_principal_password" "sp_password" {
+  service_principal_id = data.azuread_service_principal.gta_sp.id
+}
+
 resource "azurerm_virtual_network" "virtual_network" {
   name                = "${var.resource_group_name}-network"
   address_space       = ["10.0.0.0/16"]
-  location            = var.resource_location
-  resource_group_name = var.resource_group_name
+  location            = data.azurerm_resource_group.resource_group.location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
+  tags = var.tags
 }
 
 resource "azurerm_subnet" "subnet" {
   name                 = "${var.resource_group_name}-subnet"
-  resource_group_name  = var.resource_group_name
+  resource_group_name  = data.azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.virtual_network.name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
 resource "azurerm_public_ip" "public_ip" {
   name                = "${var.vm_name}-public-ip"
-  resource_group_name = var.resource_group_name
-  location            = var.resource_location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
+  location            = data.azurerm_resource_group.resource_group.location
   allocation_method   = "Static"
   sku                 = "Standard"
+  tags = var.tags
 }
 
 resource "azurerm_network_security_group" "network_security_group" {
   name                = "${var.vm_name}-nsg"
-  location            = var.resource_location
-  resource_group_name = var.resource_group_name
+  location            = data.azurerm_resource_group.resource_group.location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
 
   security_rule {
     name                       = "AllowSSH"
@@ -48,12 +78,13 @@ resource "azurerm_network_security_group" "network_security_group" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  tags = var.tags
 }
 
 resource "azurerm_network_interface" "network_interface" {
   name                = "${var.vm_name}-nic"
-  location            = var.resource_location
-  resource_group_name = var.resource_group_name
+  location            = data.azurerm_resource_group.resource_group.location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
 
   ip_configuration {
     name                          = "internal"
@@ -61,6 +92,7 @@ resource "azurerm_network_interface" "network_interface" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.public_ip.id
   }
+  tags = var.tags
 }
 
 resource "azurerm_network_interface_security_group_association" "network_interface_security_group_association" {
@@ -73,8 +105,8 @@ data "azurerm_subscription" "current_subscription" {}
 
 resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
   name                = var.vm_name
-  resource_group_name = var.resource_group_name
-  location            = var.resource_location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
+  location            = data.azurerm_resource_group.resource_group.location
   size                = var.vm_size
   admin_username      = var.admin_username
   network_interface_ids = [
@@ -130,8 +162,8 @@ resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
     content = templatefile("${path.module}/osServicePrincipal.json.tpl", {
       subscription_id  = data.azurerm_subscription.current_subscription.subscription_id
       sp_client_id     = var.sp_client_id
-      sp_client_secret = var.sp_client_secret
-      tenant_id        = var.sp_tenant_id
+      sp_client_secret = azuread_service_principal_password.sp_password.value
+      tenant_id        = data.azuread_client_config.current.tenant_id
     })
     destination = "/home/${var.admin_username}/.azure/osServicePrincipal.json"
     connection {
@@ -187,6 +219,7 @@ resource "azurerm_linux_virtual_machine" "linux_virtual_machine" {
       timeout     = "60m"
     }
   }
+  tags = var.tags
 }
 
 output "vm_name" {

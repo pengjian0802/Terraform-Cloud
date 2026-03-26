@@ -3,11 +3,6 @@ variable "resource_group_name" {
   description = "Resource Group Name"
 }
 
-variable "resource_location" {
-  type        = string
-  description = "Resource Location"
-}
-
 variable "admin_username" {
   type        = string
   description = "Admin Username"
@@ -79,16 +74,16 @@ variable "sp_client_id" {
   description = "Service Principal Client ID"
 }
 
-variable "sp_client_secret" {
-  type        = string
-  description = "Service Principal Client Secret"
-  sensitive   = true
-}
+# variable "sp_client_secret" {
+#   type        = string
+#   description = "Service Principal Client Secret"
+#   sensitive   = true
+# }
 
-variable "sp_tenant_id" {
-  type        = string
-  description = "SP Tenant ID"
-}
+# variable "sp_tenant_id" {
+#   type        = string
+#   description = "SP Tenant ID"
+# }
 
 variable "ocp_master_replicas" {
   type        = number
@@ -113,4 +108,14 @@ variable "ocp_worker_size" {
 variable "ocp_ssh_public_key" {
   type        = string
   description = "OCP SSH Public Key"
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Tags"
+  default     = {
+    Environment = "dev"
+    ManagedBy   = "Terraform"
+    Service     = "GTA"
+  }
 }
