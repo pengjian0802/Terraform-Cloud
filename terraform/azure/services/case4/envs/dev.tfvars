@@ -1,5 +1,7 @@
 sp_client_id = "8005ede7-82c2-42d4-acbc-ff0a9005e303"
 resource_group_name = "gta-devops-rg"
+acr_name_prefix = "acrdevops"
+acr_sku = "Basic"
 key_vault_name = "ocp-guide-vm-kv"
 guide_vm_instance = {
   vm_name = "ocp-vm-guide"

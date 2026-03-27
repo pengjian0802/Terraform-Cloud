@@ -18,6 +18,15 @@ provider "azurerm" {
 provider "azuread" {
 }
 
+module "acr" {
+  source              = "../../modules/acr"
+  resource_group_name = var.resource_group_name
+  acr_name_prefix     = var.acr_name_prefix
+  acr_sku             = var.acr_sku
+  sp_client_id        = var.sp_client_id
+  tags                = var.tags
+}
+
 
 module "key_vaults" {
   source              = "../../modules/key_vaults"
@@ -63,7 +72,5 @@ module "linux_vm_ocp_install" {
   ocp_worker_size       = var.guide_vm_instance.ocp_config.worker_size
   ocp_ssh_public_key    = module.key_vaults.ssh_public_key
   sp_client_id          = var.sp_client_id
-  #   sp_client_secret      = module.sp.sp_client_secret
-  #   sp_tenant_id          = module.sp.sp_tenant_id
-  tags = var.tags
+  tags                  = var.tags
 }

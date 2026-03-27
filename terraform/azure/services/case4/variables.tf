@@ -8,6 +8,17 @@ variable "resource_group_name" {
   description = "Resource Group Name"
 }
 
+variable "acr_name_prefix" {
+  type        = string
+  description = "ACR Name Prefix"
+}
+
+variable "acr_sku" {
+  type        = string
+  description = "ACR SKU"
+  default     = "Basic" # 基本SKU，免费; Premium 高级SKU，需要订阅
+}
+
 variable "admin_username" {
   type        = string
   description = "Admin Username"
